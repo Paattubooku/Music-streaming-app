@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 15,
-    // marginBottom: 60,
+    marginBottom: 60,
   },
   loadingText: {
     color: "#fff",

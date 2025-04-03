@@ -15,6 +15,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
 import { fetchTopSearch } from "@/redux/apiSlice";
 import SongOptionsModal from "@/components/SongOptionsModal";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList } from "@/typs/navigation";
 
 // Define types for the search item
 interface SearchItem {
@@ -24,6 +27,8 @@ interface SearchItem {
   image: string;
   perma_url: string;
 }
+
+type NavigationProp = StackNavigationProp<RootStackParamList, "SongDetails">;
 
 export default function SearchScreen() {
   const [showAllTrending, setShowAllTrending] = useState<boolean>(false);
@@ -70,10 +75,13 @@ export default function SearchScreen() {
   const clearSearchInput = () => {
     setSearchText("");
   };
+  const navigation = useNavigation<NavigationProp>();
 
+  console.log(navigation.getState().routes); // ✅ Check available routes
   return (
     <SafeAreaView style={styles.container}>
-      {/* Search Header */}
+      <View style={{marginBottom:70}}>
+        {/* Search Header */}
       <View style={styles.searchBar}>
         <Ionicons name="search" size={20} color="#aaa" style={styles.searchIcon} />
         <TextInput
@@ -141,7 +149,13 @@ export default function SearchScreen() {
               <TouchableOpacity
                 key={item.id}
                 style={styles.searchItem}
-                onPress={() => console.log(`Opening: ${item.perma_url}`)}
+                onPress={() => {
+                  navigation.navigate("SongDetails", {
+                    songId: item.id,
+                    title: item.title,
+                    image: item.image,
+                  })
+                }}
               >
                 <Image source={{ uri: item.image }} style={styles.albumArt} />
                 <View style={styles.textContainer}>
@@ -166,6 +180,7 @@ export default function SearchScreen() {
           )}
         </View>
       </ScrollView>
+      </View>
       {selectedSong && (
         <SongOptionsModal visible={modalVisible} onClose={() => setModalVisible(false)} song={selectedSong} />
       )}
@@ -178,6 +193,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "black",
     paddingTop: 40,
+    // marginBottom:60
   },
   errorText: {
     color: "red",
@@ -206,6 +222,7 @@ const styles = StyleSheet.create({
   recentContainer: {
     paddingHorizontal: 20,
     paddingTop: 20,
+    marginBottom:70
   },
   header: {
     flexDirection: "row",
