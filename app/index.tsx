@@ -7,17 +7,24 @@ import {
   Image,
   SafeAreaView,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchLaunchData } from "../redux/apiSlice";
 import { AppDispatch, RootState } from "../redux/store"; // ✅ Import types
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList } from "@/typs/navigation";
+import { useNavigation } from "expo-router";
+import { decode } from 'html-entities';
 
 // Define types
 interface Station {
   id: string;
   title: string;
-  source: string;
+  perma_url: string;
   image: string;
+  type: string,
+
 }
 
 interface SectionData {
@@ -25,11 +32,14 @@ interface SectionData {
   stations: Station[];
 }
 
+type NavigationProp = StackNavigationProp<RootStackParamList, "SongDetails">;
+
 export default function HomeScreen() {
   const dispatch = useDispatch<AppDispatch>(); // ✅ Correctly typed dispatch
   const { launchData, loading, error } = useSelector(
     (state: RootState) => state.launch
   );
+  const navigation = useNavigation<NavigationProp>();
 
   useEffect(() => {
     if (!launchData) {
@@ -61,6 +71,8 @@ export default function HomeScreen() {
     })
   );
 
+
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -77,7 +89,14 @@ export default function HomeScreen() {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 renderItem={({ item: station }) => (
-                  <View style={styles.cardContainer}>
+                  <TouchableOpacity style={styles.cardContainer} onPress={() => {
+                    navigation.navigate("SongDetails", {
+                      songId: station?.perma_url.split('/').pop() || "",
+                      type: station.type,
+                      title: station.title,
+                      image: station.image,
+                    })
+                  }}>
                     <View style={styles.card}>
                       <Image
                         source={{ uri: station.image?.replace('150x150.jpg', '500x500.jpg') }}
@@ -90,9 +109,9 @@ export default function HomeScreen() {
                       numberOfLines={1}
                       ellipsizeMode="tail"
                     >
-                      {station.title}
+                      {decode(station.title)}
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                 )}
               />
             </View>
@@ -141,8 +160,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: "#111",
     borderRadius: 12,
-    width: 160,
-    height: 160,
+    width: 150,
+    height: 150,
     alignItems: "center",
     justifyContent: "center",
   },

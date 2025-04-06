@@ -19,6 +19,8 @@ const getLanguageFromAsyncStorage = async (): Promise<string> => {
 const fetchFromApi = async (endpoint: string) => {
   const selectedLanguage = encodeURIComponent(await getLanguageFromAsyncStorage());
   const response = await axios.get(`${BASE_URL}${endpoint}&language=${selectedLanguage}`);
+  console.log(`${BASE_URL}${endpoint}&language=${selectedLanguage}`)
+  // console.log("response",response.data)
   return response.data;
 
 };
@@ -27,11 +29,11 @@ const fetchFromApi = async (endpoint: string) => {
 interface SongDetails {
   id: string;
   encrypted_media_url?: string;
-  more_info?: { encrypted_media_url?: string };
+  urlid?: { encrypted_media_url?: string };
 }
 
 interface FetchParams {
-  id: string;
+  id?: string;
   type?: string;
   title?: string;
   source?: string;
@@ -51,7 +53,7 @@ interface LaunchState {
   autocompleteData: any;
   Details: any;
   SingleAlbumDetails: any;
-  currentSongIndex: number | null;
+  currentSongIndex: any;
   isRadio: boolean;
   currentlyPlayingTrack: any;
   AudioQueue: any[];
@@ -68,7 +70,7 @@ const initialState: LaunchState = {
   autocompleteData: null,
   Details: null,
   SingleAlbumDetails: null,
-  currentSongIndex: null,
+  currentSongIndex: {},
   isRadio: false,
   currentlyPlayingTrack: null,
   AudioQueue: [],
@@ -93,8 +95,10 @@ export const fetchTopSearch = createAsyncThunk('launch/fetchTopSearch', async ()
   fetchFromApi(`topsearch?`)
 );
 
-export const fetchDetails = createAsyncThunk('launch/fetchDetails', async ({ type, id }: FetchParams) =>
-  fetchFromApi(`details/${id}/${type}`)
+export const fetchDetails = createAsyncThunk('launch/fetchDetails', async ({ type, id }: FetchParams) =>{
+  const data = await fetchFromApi(`details/${id}/${type}`)
+  return data
+}
 );
 
 export const fetchOtherDetails = createAsyncThunk('launch/fetchOtherDetails', async ({ title, source, data }: FetchParams) =>
@@ -107,13 +111,13 @@ export const fetchSingleAlbumDetails = createAsyncThunk('launch/fetchSingleAlbum
 
 export const fetchSingleSongDetails = createAsyncThunk('launch/fetchSingleSongDetails', async ({ id }: FetchParams) => {
   const data = await fetchFromApi(`song/${id}`);
-  return data[id];
+  return data[id || ""];
 });
 
 export const fetchAudioDetails = createAsyncThunk('launch/fetchAudioDetails', async (data: SongDetails[]) => {
   const responses = await Promise.all(
-    data.map(({ id, more_info, encrypted_media_url }) =>
-      fetchFromApi(`mediaURL/${id}/${encodeURIComponent(more_info?.encrypted_media_url || encrypted_media_url || '')}`)
+    data.map(({ id, urlid, encrypted_media_url }) =>
+      fetchFromApi(`mediaURL/${id}/${encodeURIComponent(urlid?.encrypted_media_url || encrypted_media_url || '')}`)
     )
   );
   return responses;
@@ -134,13 +138,22 @@ const apiSlice = createSlice({
   name: 'launch',
   initialState,
   reducers: {
-    clearStateField: (state, action: PayloadAction<keyof LaunchState>) => {
-      state[action.payload] = null;
+    clearDetailsData: (state) => {
+      state.Details = null;
+    },
+    clearSingleAlbumDetailsData: (state) => {
+      state.SingleAlbumDetails = null; // Reset autocomplete data to null
+    },
+    clearAudioQueue: (state) => {
+      state.AudioQueue = []; // Reset autocomplete data to null
+    },
+    clearRadioSongs: (state) => {
+      state.RadioSongs = null; // Reset autocomplete data to null
     },
     updateAudioQueue: (state, action: PayloadAction<any[]>) => {
       state.AudioQueue = action.payload;
     },
-    updateSongIndex: (state, action: PayloadAction<number | null>) => {
+    updateSongIndex: (state, action: PayloadAction<{}>) => {
       state.currentSongIndex = action.payload;
     },
     updateIsRadio: (state, action: PayloadAction<boolean>) => {
@@ -159,7 +172,7 @@ const apiSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchLaunchData.fulfilled, (state, action) => {
+      .addCase(fetchLaunchData.fulfilled, (state, action) => {        
         state.loading = false;
         state.launchData = action.payload;
       })
@@ -167,6 +180,37 @@ const apiSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || null;
       })
+      .addCase(fetchDetails.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchDetails.fulfilled, (state, action) => {    
+        state.loading = false;
+        state.Details = action.payload;
+      })
+      .addCase(fetchDetails.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || null;
+      })
+
+      .addCase(fetchOtherDetails.pending, (state) => {
+        state.loading = true;  // Set loading state to true when fetching
+        state.error = null;    // Reset error state
+      })
+      .addCase(fetchOtherDetails.fulfilled, (state, action) => {
+        state.loading = false; // Set loading state to false when fetched
+        // Check if Details is an object and merge the fetched data
+        if (state.Details && typeof state.Details === 'object') {
+          state.Details = { ...state.Details, ...action.payload }; // Merge the fetched data
+        } else {
+          state.Details = action.payload; // Set new state if Details is not an object
+        }
+      })
+      .addCase(fetchOtherDetails.rejected, (state, action) => {
+        state.loading = false; // Set loading state to false if fetching fails
+        state.error = action.error.message || null; // Store error message
+      })
+
       .addCase(fetchTopSearch.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -182,6 +226,6 @@ const apiSlice = createSlice({
   },
 });
 
-export const { clearStateField, updateAudioQueue, updateSongIndex, updateIsRadio, updateCurrentlyPlayingTrack, updatePlayNext } =
+export const { clearDetailsData, clearSingleAlbumDetailsData, clearAudioQueue, clearRadioSongs, updateAudioQueue, updateSongIndex, updateIsRadio, updateCurrentlyPlayingTrack, updatePlayNext } =
   apiSlice.actions;
 export default apiSlice.reducer;

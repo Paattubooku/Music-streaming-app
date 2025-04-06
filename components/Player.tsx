@@ -2,10 +2,17 @@ import React, { useState } from "react";
 import { View, Text, Image, TouchableOpacity, Modal, StyleSheet, StatusBar } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, runOnJS } from "react-native-reanimated";
 import { GestureHandlerRootView, GestureDetector, Gesture } from "react-native-gesture-handler";
+import { Ionicons } from "@expo/vector-icons";
+import { RootState } from "@/redux/store";
+import { useSelector } from "react-redux";
+import { decode } from "html-entities";
 
 const MiniPlayer = () => {
+    const [isPlaying, setIsPlaying] = useState(false);
     const [isModalVisible, setModalVisible] = useState(false);
-
+    const { Details, currentlyPlayingTrack, AudioQueue, loading, error } = useSelector(
+        (state: RootState) => state.launch
+    );
     // Shared values for animation
     const width = useSharedValue(350);
     const height = useSharedValue(60);
@@ -34,7 +41,10 @@ const MiniPlayer = () => {
         });
         width.value = withTiming(350, { duration: 400, easing: Easing.in(Easing.exp) });
         height.value = withTiming(60, { duration: 400, easing: Easing.in(Easing.exp) });
-        
+
+    };
+    const togglePlayPause = () => {
+        setIsPlaying(!isPlaying);
     };
 
     // Gesture to close modal on swipe down
@@ -44,11 +54,11 @@ const MiniPlayer = () => {
                 runOnJS(closeModal)();
             }
         });
-
+    // if (!Details) return null
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
             {/* Mini Player with Animation */}
-            <Animated.View style={[styles.miniPlayer, animatedMiniPlayer]}>
+            {/* <Animated.View style={[styles.miniPlayer, animatedMiniPlayer]}>
                 <TouchableOpacity style={styles.miniPlayerContent} onPress={openModal}>
                     <Image
                         source={{ uri: "https://via.placeholder.com/50" }} // Replace with actual song image
@@ -60,6 +70,25 @@ const MiniPlayer = () => {
                             <Text style={{ color: "#fff", fontSize: 24 }}>▶</Text>
                         </View>
                     </TouchableOpacity>
+                </TouchableOpacity>
+            </Animated.View> */}
+            <Animated.View style={[styles.miniPlayer, animatedMiniPlayer]}>
+                <TouchableOpacity onPress={openModal}>
+                    <View style={styles.playerContainer}>
+                        <Image
+                            source={{ uri: Details?.image || "https://via.placeholder.com/50"  }}
+                            style={styles.playerImage}
+                        />
+                        <View style={styles.playerInfo}>
+                            <Text style={styles.trackTitle}>{decode(Details?.title || "Title")}</Text>
+                            <Text numberOfLines={1} style={styles.trackSubtitle}>{decode(Details?.subtitle || "")}</Text>
+                        </View>
+                        <TouchableOpacity onPress={togglePlayPause}>
+                            <View style={styles.playButton}>
+                                <Text style={{ color: "#fff", fontSize: 30 }}>▶</Text>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
                 </TouchableOpacity>
             </Animated.View>
 
@@ -84,20 +113,42 @@ const MiniPlayer = () => {
 export default MiniPlayer;
 
 const styles = StyleSheet.create({
+    trackSubtitle: {
+        color: 'gray',
+        fontSize: 13,
+    },
+    trackTitle: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    playerInfo: {
+        flex: 1,
+    },
+    playerImage: {
+        width: 50,
+        height: 50,
+        borderRadius: 8,
+        marginRight: 12,
+    },
+    playerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#1E1E1E',
+        borderRadius: 12,
+        padding: 10,
+        marginBottom: 20,
+    },
     miniPlayer: {
         position: "absolute",
         bottom: 82,
         backgroundColor: "#111",
         borderRadius: 10,
-        overflow: "hidden",
+        // overflow: "hidden",
         alignSelf: "center",
+        height: 100
     },
-    miniPlayerContent: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: 10,
-    },
+
     songImage: {
         width: 40,
         height: 40,
