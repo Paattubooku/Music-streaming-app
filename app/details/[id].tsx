@@ -228,6 +228,14 @@ const MusicScreen = () => {
                       alignItems: "center",
                       width: 140,
                     }}
+                    onPress={() => {
+                      navigation.navigate("SongDetails", {
+                        songId: item?.perma_url.split('/').pop() || "",
+                        type: item.type,
+                        title: item.title,
+                        image: item.image,
+                      })
+                    }}
                   >
                     <Image
                       source={{ uri: item.image?.replace("150x150.jpg", "500x500.jpg") }}
@@ -262,6 +270,14 @@ const MusicScreen = () => {
                       alignItems: "center",
                       width: 140,
                     }}
+                    onPress={() => {
+                      navigation.navigate("SongDetails", {
+                        songId: item?.perma_url.split('/').pop() || "",
+                        type: item.type,
+                        title: item.title,
+                        image: item.image,
+                      })
+                    }}
                   >
                     <Image
                       source={{ uri: item.image?.replace("150x150.jpg", "500x500.jpg") }}
@@ -295,6 +311,14 @@ const MusicScreen = () => {
                       marginRight: 12,
                       alignItems: "center",
                       width: 140,
+                    }}
+                    onPress={() => {
+                      navigation.navigate("SongDetails", {
+                        songId: item?.perma_url.split('/').pop() || "",
+                        type: item.type,
+                        title: item.title,
+                        image: item.image,
+                      })
                     }}
                   >
                     <Image
